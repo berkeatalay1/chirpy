@@ -3,6 +3,9 @@ package main
 import (
 	"log"
 	"net/http"
+
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 )
 
 type apiConfig struct {
@@ -16,11 +19,20 @@ func main() {
 		fileserverHits: 0,
 	}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", readyHandler)
-	mux.HandleFunc("/metrics", apiCfg.metricsHandler)
-	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app/", http.FileServer(http.Dir(".")))))
-	corsMux := middlewareCors(mux)
+	apiRouter := chi.NewRouter()
+	apiRouter.Get("/healthz", readyHandler)
+	apiRouter.Post("/validate_chirp", validate_chirp)
+
+	adminRouter := chi.NewRouter()
+	adminRouter.Get("/metrics", apiCfg.metricsHandler)
+
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	r.Handle("/app/*", apiCfg.middlewareMetricsInc(http.StripPrefix("/app/", http.FileServer(http.Dir(".")))))
+	r.Handle("/app", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
+	r.Mount("/api", apiRouter)
+	r.Mount("/admin", adminRouter)
+	corsMux := middlewareCors(r)
 
 	srv := &http.Server{
 		Addr:    ":" + port,
