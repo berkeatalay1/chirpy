@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 )
 
@@ -23,43 +22,16 @@ func validate_chirp(w http.ResponseWriter, r *http.Request) {
 	req := request{}
 	err := decoder.Decode(&req)
 	if err != nil {
-		error := error{Error: "Something went wrong"}
-		dat, err := json.Marshal(error)
-		if err != nil {
-			log.Printf("Error marshalling JSON: %s", err)
-			w.WriteHeader(500)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(400)
-		w.Write(dat)
+		respondWithError(w, 400, "Something went wrong")
 		return
 	}
 
 	if len(req.Body) > 140 {
-		error := error{Error: "Chirp is too long"}
-		dat, err := json.Marshal(error)
-		if err != nil {
-			log.Printf("Error marshalling JSON: %s", err)
-			w.WriteHeader(500)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(400)
-		w.Write(dat)
+		respondWithError(w, 400, "Chirp is too long")
 		return
 	}
 	respBody := response{
 		Valid: true,
 	}
-	dat, err := json.Marshal(respBody)
-	if err != nil {
-		log.Printf("Error marshalling JSON: %s", err)
-		w.WriteHeader(500)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	w.Write(dat)
-
+	respondWithJSON(w, 200, respBody)
 }
