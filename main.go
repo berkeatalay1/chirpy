@@ -4,24 +4,31 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/berkeatalay/chirpy/internal/database"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 )
 
 type apiConfig struct {
 	fileserverHits int
+	DB             *database.DB
 }
 
 func main() {
 	const port = "8080"
-
+	db, err := database.NewDB("database.json")
+	if err != nil {
+		log.Fatal(err)
+	}
 	apiCfg := apiConfig{
 		fileserverHits: 0,
+		DB:             db,
 	}
 
 	apiRouter := chi.NewRouter()
 	apiRouter.Get("/healthz", readyHandler)
-	apiRouter.Post("/validate_chirp", validate_chirp)
+	apiRouter.Post("/chirps", apiCfg.add_chirp)
+	apiRouter.Get("/chirps", apiCfg.get_chirps)
 
 	adminRouter := chi.NewRouter()
 	adminRouter.Get("/metrics", apiCfg.metricsHandler)

@@ -9,15 +9,11 @@ type request struct {
 	Body string `json:"body"`
 }
 
-type response struct {
-	Valid bool `json:"valid"`
-}
-
 type error struct {
 	Error string `json:"error"`
 }
 
-func validate_chirp(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) add_chirp(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	req := request{}
 	err := decoder.Decode(&req)
@@ -30,8 +26,14 @@ func validate_chirp(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, 400, "Chirp is too long")
 		return
 	}
-	respBody := response{
-		Valid: true,
+
+	res := replace_bad_words(req.Body)
+
+	responseBody, err := cfg.DB.CreateChirp(res)
+	if err != nil {
+		respondWithError(w, 400, err.Error())
+		return
 	}
-	respondWithJSON(w, 200, respBody)
+
+	respondWithJSON(w, 201, responseBody)
 }
