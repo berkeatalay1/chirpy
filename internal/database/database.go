@@ -53,16 +53,16 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 	return chirp, nil
 }
 
-func (db *DB) CreateUser(body string) (User, error) {
+func (db *DB) CreateUser(email string, password string) (User, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		log.Fatal(err)
 		return User{}, err
 	}
-
 	user := User{}
-	user.Email = body
+	user.Email = email
 	user.Id = int32(len(dbStructure.Users) + 1)
+	user.Password = password
 
 	dbStructure.Users[int(user.Id)] = user
 	err = db.writeDB(dbStructure)

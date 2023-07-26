@@ -8,6 +8,7 @@ import (
 func (cfg *apiConfig) add_user(w http.ResponseWriter, r *http.Request) {
 	type request struct {
 		Email string `json:"email"`
+		Psw   string `json:"password"`
 	}
 	decoder := json.NewDecoder(r.Body)
 	req := request{}
@@ -17,7 +18,7 @@ func (cfg *apiConfig) add_user(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseBody, err := cfg.DB.CreateUser(req.Email)
+	responseBody, err := cfg.DB.CreateUser(req.Email, req.Psw)
 	if err != nil {
 		respondWithError(w, 400, err.Error())
 		return

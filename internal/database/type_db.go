@@ -18,6 +18,7 @@ type Chirp struct {
 }
 
 type User struct {
-	Email string `json:"email"`
-	Id    int32  `json:"id"`
+	Email    string `json:"email"`
+	Id       int32  `json:"id"`
+	Password string
 }
