@@ -20,6 +20,7 @@ func NewDB(path string) (*DB, error) {
 func (db *DB) createDB() error {
 	dbStructure := DBStructure{
 		Chirps: map[int]Chirp{},
+		Users:  map[int]User{},
 	}
 	return db.writeDB(dbStructure)
 }
@@ -50,6 +51,26 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 		return Chirp{}, err
 	}
 	return chirp, nil
+}
+
+func (db *DB) CreateUser(body string) (User, error) {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		log.Fatal(err)
+		return User{}, err
+	}
+
+	user := User{}
+	user.Email = body
+	user.Id = int32(len(dbStructure.Users) + 1)
+
+	dbStructure.Users[int(user.Id)] = user
+	err = db.writeDB(dbStructure)
+	if err != nil {
+		log.Fatal(err)
+		return User{}, err
+	}
+	return user, nil
 }
 
 func (db *DB) GetChirps() ([]Chirp, error) {
