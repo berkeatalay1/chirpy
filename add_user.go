@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/berkeatalay/chirpy/internal/auth"
 )
 
 func (cfg *apiConfig) add_user(w http.ResponseWriter, r *http.Request) {
@@ -18,7 +20,12 @@ func (cfg *apiConfig) add_user(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	responseBody, err := cfg.DB.CreateUser(req.Email, req.Psw)
+	psw, err := auth.HashPassword(req.Psw)
+	if err != nil {
+		respondWithError(w, 400, "Something went wrong")
+		return
+	}
+	responseBody, err := cfg.DB.CreateUser(req.Email, psw)
 	if err != nil {
 		respondWithError(w, 400, err.Error())
 		return

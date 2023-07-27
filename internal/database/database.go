@@ -54,11 +54,17 @@ func (db *DB) CreateChirp(body string) (Chirp, error) {
 }
 
 func (db *DB) CreateUser(email string, password string) (User, error) {
+	_, isFound := db.GetUserWithEmail(email)
+	if isFound {
+		return User{}, errors.New("User Email Allready Exist")
+	}
+
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		log.Fatal(err)
 		return User{}, err
 	}
+
 	user := User{}
 	user.Email = email
 	user.Id = int32(len(dbStructure.Users) + 1)
@@ -71,6 +77,23 @@ func (db *DB) CreateUser(email string, password string) (User, error) {
 		return User{}, err
 	}
 	return user, nil
+}
+
+func (db *DB) GetUserWithEmail(email string) (User, bool) {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		log.Fatal(err)
+		return User{}, false
+	}
+
+	users := dbStructure.Users
+	for _, user := range users {
+		if user.Email == email {
+			return user, true
+		}
+	}
+
+	return User{}, false
 }
 
 func (db *DB) GetChirps() ([]Chirp, error) {
