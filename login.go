@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -40,7 +41,6 @@ func (cfg *apiConfig) login(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, 400, err.Error())
 		return
 	}
-
 	jwt := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
 		Issuer:  "chirpy",
 		Subject: string(user.Id),
@@ -52,7 +52,12 @@ func (cfg *apiConfig) login(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 
-	token, err := jwt.SignedString(jwt)
+	key, err := base64.StdEncoding.DecodeString(cfg.JwtSecret)
+	if err != nil {
+		respondWithError(w, 400, err.Error())
+		return
+	}
+	token, err := jwt.SignedString(key)
 	if err != nil {
 		respondWithError(w, 400, err.Error())
 		return
@@ -67,5 +72,5 @@ func (cfg *apiConfig) login(w http.ResponseWriter, r *http.Request) {
 	rsp.Id = user.Id
 	rsp.Token = token
 
-	respondWithJSON(w, 200, user)
+	respondWithJSON(w, 200, rsp)
 }
