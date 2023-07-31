@@ -14,7 +14,7 @@ import (
 type apiConfig struct {
 	fileserverHits int
 	DB             *database.DB
-	JwtSecret      string
+	jwtSecret      string
 }
 
 func main() {
@@ -27,7 +27,7 @@ func main() {
 	apiCfg := apiConfig{
 		fileserverHits: 0,
 		DB:             db,
-		JwtSecret:      os.Getenv("JWT_SECRET"),
+		jwtSecret:      os.Getenv("JWT_SECRET"),
 	}
 
 	apiRouter := chi.NewRouter()
@@ -36,6 +36,7 @@ func main() {
 	apiRouter.Get("/chirps", apiCfg.get_chirps)
 	apiRouter.Get("/chirps/{CHIRPID}", apiCfg.get_chirp)
 	apiRouter.Post("/users", apiCfg.add_user)
+	apiRouter.Put("/users", apiCfg.update_user)
 	apiRouter.Post("/login", apiCfg.login)
 
 	adminRouter := chi.NewRouter()

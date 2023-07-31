@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/berkeatalay/chirpy/internal/auth"
@@ -15,8 +15,9 @@ func (cfg *apiConfig) login(w http.ResponseWriter, r *http.Request) {
 	type request struct {
 		Email      string `json:"email"`
 		Psw        string `json:"password"`
-		ExpSeconds string `json:"expires_in_seconds"`
+		ExpSeconds int    `json:"expires_in_seconds"`
 	}
+	defaultExpiration := 60 * 60 * 24
 	decoder := json.NewDecoder(r.Body)
 	req := request{}
 	err := decoder.Decode(&req)
@@ -36,28 +37,25 @@ func (cfg *apiConfig) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	expSeconds, err := strconv.Atoi(req.ExpSeconds)
-	if err != nil {
-		respondWithError(w, 400, err.Error())
-		return
+	if req.ExpSeconds == 0 {
+		req.ExpSeconds = defaultExpiration
+	} else if req.ExpSeconds > defaultExpiration {
+		req.ExpSeconds = defaultExpiration
 	}
-	jwt := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		Issuer:  "chirpy",
-		Subject: string(user.Id),
-		ExpiresAt: &jwt.NumericDate{
-			Time: time.Now().UTC().Add(time.Duration(expSeconds) * time.Second),
-		},
-		IssuedAt: &jwt.NumericDate{
-			Time: time.Now().UTC(),
-		},
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		Issuer:    "chirpy",
+		IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
+		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Duration(req.ExpSeconds) * time.Second)),
+		Subject:   fmt.Sprintf("%d", user.Id),
 	})
 
-	key, err := base64.StdEncoding.DecodeString(cfg.JwtSecret)
+	key, err := base64.StdEncoding.DecodeString(cfg.jwtSecret)
 	if err != nil {
 		respondWithError(w, 400, err.Error())
 		return
 	}
-	token, err := jwt.SignedString(key)
+	signedToken, err := token.SignedString(key)
 	if err != nil {
 		respondWithError(w, 400, err.Error())
 		return
@@ -70,7 +68,7 @@ func (cfg *apiConfig) login(w http.ResponseWriter, r *http.Request) {
 	rsp := response{}
 	rsp.Email = user.Email
 	rsp.Id = user.Id
-	rsp.Token = token
+	rsp.Token = signedToken
 
 	respondWithJSON(w, 200, rsp)
 }

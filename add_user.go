@@ -12,6 +12,10 @@ func (cfg *apiConfig) add_user(w http.ResponseWriter, r *http.Request) {
 		Email string `json:"email"`
 		Psw   string `json:"password"`
 	}
+	type response struct {
+		Email string `json:"email"`
+		Id    int32  `json:"id"`
+	}
 	decoder := json.NewDecoder(r.Body)
 	req := request{}
 	err := decoder.Decode(&req)
@@ -31,5 +35,8 @@ func (cfg *apiConfig) add_user(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, 201, responseBody)
+	respondWithJSON(w, 201, response{
+		Email: responseBody.Email,
+		Id:    responseBody.Id,
+	})
 }
